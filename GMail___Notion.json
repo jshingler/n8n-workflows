@@ -1,0 +1,491 @@
+{
+  "name": "GMail - Notion",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "a9e1d568-fa1b-4ba7-afe9-15f2525c3d7d",
+      "name": "On schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        -1120,
+        100
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "operation": "subtractFromDate",
+        "magnitude": "={{ $json.timestamp }}",
+        "timeUnit": "minutes",
+        "duration": 1,
+        "outputFieldName": "last_request_time",
+        "options": {}
+      },
+      "id": "5ef8bc85-4651-4a86-b3c3-2494f50bf7b4",
+      "name": "Derive last request time",
+      "type": "n8n-nodes-base.dateTime",
+      "position": [
+        -900,
+        100
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "filters": {
+          "labelIds": [
+            "Label_2850220375946757607"
+          ]
+        }
+      },
+      "id": "9be028e8-cc0c-456f-bfd9-c5c7f7d86334",
+      "name": "Get emails from label and last request time",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        -680,
+        100
+      ],
+      "typeVersion": 2,
+      "webhookId": "81869fbc-b306-45dc-9c47-e6a39dbce4fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YlDDM5mc8XffJIC1",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "41d69870-feb1-41b4-a7f7-bb21619f9bb0",
+          "mode": "list",
+          "cachedResultName": " Action Items (DB)",
+          "cachedResultUrl": "https://www.notion.so/41d69870feb141b4a7f7bb21619f9bb0"
+        },
+        "title": "={{ $('If database page not found').item.json.Subject }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "gmail_thread_id|rich_text",
+              "textContent": "={{ $('If database page not found').item.json.id }}"
+            },
+            {
+              "key": "Email Thread|url",
+              "urlValue": "=https://mail.google.com/mail/u/{{ $json.emailAddress }}/#all/{{ $('If database page not found').item.json.id }}"
+            },
+            {
+              "key": "Status|select",
+              "selectValue": "=Active"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {
+              "type": "heading_3",
+              "textContent": "Snippet"
+            },
+            {
+              "textContent": "={{ $('If database page not found').item.json.snippet }}"
+            },
+            {
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "text": "See more",
+                    "isLink": true,
+                    "textLink": "=https://mail.google.com/mail/u/{{ $json.emailAddress }}/#all/{{ $('If database page not found').item.json.id }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "iconType": "file",
+          "icon": "https://avatars.githubusercontent.com/u/45487711?s=280&v=4"
+        }
+      },
+      "id": "1173b321-d74a-4ac7-a644-bac25166ba14",
+      "name": "Create database page",
+      "type": "n8n-nodes-base.notion",
+      "position": [
+        220,
+        0
+      ],
+      "typeVersion": 2,
+      "credentials": {
+        "notionApi": {
+          "id": "mKP3GVbsq5yj4j7e",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/jshingler/41d69870feb141b4a7f7bb21619f9bb0",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "gmail_thread_id|rich_text",
+              "condition": "equals",
+              "richTextValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a22776e3-c7ad-44f7-9b50-463e4970715b",
+      "name": "Try get database page",
+      "type": "n8n-nodes-base.notion",
+      "position": [
+        -520,
+        160
+      ],
+      "typeVersion": 2,
+      "alwaysOutputData": true,
+      "credentials": {
+        "notionApi": {
+          "id": "mKP3GVbsq5yj4j7e",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.Done }}",
+              "value2": true
+            },
+            {}
+          ]
+        }
+      },
+      "id": "a5f9b854-7251-4ba1-9b1e-e8fb6815e7af",
+      "name": "If checked off",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -900,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "pagedUpdatedInDatabase",
+        "databaseId": {
+          "__rl": true,
+          "value": "41d69870-feb1-41b4-a7f7-bb21619f9bb0",
+          "mode": "list",
+          "cachedResultName": " Action Items (DB)",
+          "cachedResultUrl": "https://www.notion.so/41d69870feb141b4a7f7bb21619f9bb0"
+        }
+      },
+      "id": "0d7bb98e-cb03-45cd-a2c0-f4ce785cfd4a",
+      "name": "On updated database page",
+      "type": "n8n-nodes-base.notionTrigger",
+      "position": [
+        -1120,
+        400
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "notionApi": {
+          "id": "mKP3GVbsq5yj4j7e",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $json['gmail_thread_id'] }}",
+        "labelIds": [
+          "Label_2850220375946757607",
+          "INBOX"
+        ]
+      },
+      "id": "4487df6b-a659-482b-a829-0372c2d14365",
+      "name": "Remove label from target email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        -680,
+        400
+      ],
+      "typeVersion": 2,
+      "webhookId": "98161549-f111-4486-9dc2-33ea7e318934",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YlDDM5mc8XffJIC1",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "22c34bd6-cf24-486c-a0a6-f89991735b67",
+      "name": "Not yet checked off, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        -680,
+        600
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "id",
+              "field2": "property_gmail_thread_id"
+            }
+          ]
+        },
+        "joinMode": "enrichInput1",
+        "options": {}
+      },
+      "id": "60390e44-a762-45d0-8e23-af974ea4a890",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        -380,
+        40
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {},
+      "id": "5520c469-0c9e-4743-a7fc-f4ba62cf08c4",
+      "name": "If found, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        0,
+        200
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.property_gmail_thread_id }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "33627426-dcfc-45fd-85aa-8e173cb843dd",
+      "name": "If database page not found",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -220,
+        100
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {}
+      },
+      "id": "9ae1a9d3-0a1e-431c-aa32-8aa2f9b907d7",
+      "name": "Find my email address",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 4.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YlDDM5mc8XffJIC1",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Send labeled email to a Notion database\nThis workflow sends the contents of an email to a Notion database. The email must be labeled with a specific label for the workflow to trigger. The email subject will be the title of the Notion page, and a snippet of the email body will be the content of the Notion page. The email link will be added to the Notion page as a property.\n\n### How it works\nOn scheduled intervals, find all emails with a specific label. For each email, check if the email already exists in the Notion database. If it does not exist, create a new page in the Notion database, otherwise do nothing. When the task in the Notion database is checked off, the label will be removed from the email.\n\n### Setup\nThis workflow requires that you set up a Notion database or use an existing one with at least the following fields:\n- Title (title)\n- Thread ID (text)\n- Email thread (URL)\n\n\nAdditionally, create a label that will be used to trigger the workflow in Gmail. In this workflow, the label is called \"Notion\".",
+        "height": 545.405405405404,
+        "width": 501.0810810810809
+      },
+      "id": "951de7d5-bccf-4c48-b969-fbbe7f38b394",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1700,
+        40
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "If database page not found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On schedule": {
+      "main": [
+        [
+          {
+            "node": "Derive last request time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If checked off": {
+      "main": [
+        [
+          {
+            "node": "Remove label from target email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not yet checked off, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find my email address": {
+      "main": [
+        [
+          {
+            "node": "Create database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Try get database page": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Derive last request time": {
+      "main": [
+        [
+          {
+            "node": "Get emails from label and last request time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On updated database page": {
+      "main": [
+        [
+          {
+            "node": "If checked off",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If database page not found": {
+      "main": [
+        [
+          {
+            "node": "Find my email address",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If found, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get emails from label and last request time": {
+      "main": [
+        [
+          {
+            "node": "Try get database page",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e6dc66e4-7dd1-44d3-9040-13a79758d1cb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dbc16ec06077a7bea16aef7380fcd543c34d2e782b8db43367e042e9e1332b81"
+  },
+  "id": "ebYVr9y6htZR8Jvo",
+  "tags": []
+}
