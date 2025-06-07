@@ -182,7 +182,10 @@
               "value1": "={{ $json.Done }}",
               "value2": true
             },
-            {}
+            {
+              "value1": "={{ $json.gmail_thread_id }}",
+              "operation": "isNotEmpty"
+            }
           ]
         }
       },
